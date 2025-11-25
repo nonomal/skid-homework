@@ -172,17 +172,6 @@ OpenAI API 未经完整测试, 若出现问题请携带 Devtools 中的日志开
 
 欢迎PR
 
-### 准备安卓环境
-
-请在构建安卓应用前运行如下命令
-
-建议使用Android Studio 构建
-
-```shell
-pnpm build
-pnpm cap sync android
-```
-
 ### I18N 类型报错
 
 请在修改i18n 文件之后运行如下命令更新类型
