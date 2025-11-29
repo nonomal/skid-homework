@@ -14,6 +14,7 @@ import {
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
+import { useTranslation } from "react-i18next";
 
 export type ShareAISourceDialogProps = {
   open: boolean;
@@ -27,6 +28,9 @@ export default function ShareAISourceDialog({
   url,
 }: ShareAISourceDialogProps) {
   const [isCopied, setIsCopied] = useState(false);
+  const { t } = useTranslation("commons", {
+    keyPrefix: "settings-page.sources.share.dialog",
+  });
 
   const handleCopy = () => {
     navigator.clipboard.writeText(url);
@@ -38,11 +42,8 @@ export default function ShareAISourceDialog({
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="sm:max-w-md">
         <DialogHeader>
-          <DialogTitle>Share AI Source</DialogTitle>
-          <DialogDescription>
-            Scan the QR code or copy the link below. Treat this URL like a
-            password.
-          </DialogDescription>
+          <DialogTitle>{t("title")}</DialogTitle>
+          <DialogDescription>{t("desc")}</DialogDescription>
         </DialogHeader>
 
         <div className="flex flex-col items-center justify-center gap-6 py-4">
@@ -75,7 +76,7 @@ export default function ShareAISourceDialog({
                 variant="secondary"
                 onClick={handleCopy}
               >
-                <span className="sr-only">Copy</span>
+                <span className="sr-only">{t("copy")}</span>
                 {isCopied ? (
                   <Check className="h-4 w-4 text-green-600" />
                 ) : (

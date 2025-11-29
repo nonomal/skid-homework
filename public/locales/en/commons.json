@@ -265,7 +265,12 @@
         "error": "Keep at least one AI source."
       },
       "share": {
-        "label": "Share source"
+        "label": "Share source",
+        "dialog": {
+          "title": "Share AI Source",
+          "desc": "Scan the QR code or copy the link below. Treat this URL like a password.",
+          "copy": "Copy"
+        }
       }
     },
     "appearance": {

@@ -265,7 +265,12 @@
         "error": "至少保留一个 AI 源。"
       },
       "share": {
-        "label": "分享该源"
+        "label": "分享该源",
+        "dialog": {
+          "title": "分享AI源",
+          "desc": "扫描二维码或者在另一台设备上访问URL来导入AI源. 请保护好这个链接.",
+          "copy": "复制"
+        }
       }
     },
     "appearance": {
