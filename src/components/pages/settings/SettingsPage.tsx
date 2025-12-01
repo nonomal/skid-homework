@@ -6,8 +6,6 @@ import {
   type AiModelSummary,
   type AiProvider,
   useAiStore,
-  AiSource,
-  ImportAISourceModel,
 } from "@/store/ai-store";
 import {
   useSettingsStore,
@@ -26,16 +24,15 @@ import {
   CardDescription,
   CardHeader,
   CardTitle,
-} from "../ui/card";
-import { Label } from "../ui/label";
-import { Input } from "../ui/input";
-import { Button } from "../ui/button";
-import { Badge } from "../ui/badge";
-import { Textarea } from "../ui/textarea";
-import { Kbd } from "../ui/kbd";
-import { Checkbox } from "../ui/checkbox";
-import { Slider } from "../ui/slider";
-import { Popover, PopoverContent, PopoverTrigger } from "../ui/popover";
+} from "../../ui/card";
+import { Label } from "../../ui/label";
+import { Input } from "../../ui/input";
+import { Button } from "../../ui/button";
+import { Textarea } from "../../ui/textarea";
+import { Kbd } from "../../ui/kbd";
+import { Checkbox } from "../../ui/checkbox";
+import { Slider } from "../../ui/slider";
+import { Popover, PopoverContent, PopoverTrigger } from "../../ui/popover";
 import {
   Command,
   CommandEmpty,
@@ -43,19 +40,16 @@ import {
   CommandInput,
   CommandItem,
   CommandList,
-} from "../ui/command";
-import { Check, ChevronsUpDown, Plus, Share2Icon, Trash2 } from "lucide-react";
+} from "../../ui/command";
+import { Check, ChevronsUpDown } from "lucide-react";
 import { toast } from "sonner";
-import { useTheme } from "../theme-provider";
-import ShortcutRecorder from "../ShortcutRecorder";
-import AddAISourceDialog from "../dialogs/settings/AddAISourceDialog";
-import { InfoTooltip } from "../InfoTooltip";
-import { QWEN_TOKEN_URL } from "@/lib/qwen";
+import { useTheme } from "../../theme-provider";
+import ShortcutRecorder from "../../ShortcutRecorder";
 import { useQwenHintAutoToggle } from "@/hooks/useQwenHintAutoToggle";
-import ShareAISourceDialog from "../dialogs/settings/ShareAISourceDialog";
 import Link from "next/link";
+import AISourceManager from "./AISourceManager";
 
-const DEFAULT_BASE_BY_PROVIDER: Record<AiProvider, string> = {
+export const DEFAULT_BASE_BY_PROVIDER: Record<AiProvider, string> = {
   gemini: DEFAULT_GEMINI_BASE_URL,
   openai: DEFAULT_OPENAI_BASE_URL,
 };
@@ -80,14 +74,10 @@ export default function SettingsPage() {
   const { t, i18n } = useTranslation("commons", {
     keyPrefix: "settings-page",
   });
-  const { t: tCommon } = useTranslation("commons");
 
   const sources = useAiStore((s) => s.sources);
   const activeSourceId = useAiStore((s) => s.activeSourceId);
-  const setActiveSource = useAiStore((s) => s.setActiveSource);
   const updateSource = useAiStore((s) => s.updateSource);
-  const toggleSource = useAiStore((s) => s.toggleSource);
-  const removeSource = useAiStore((s) => s.removeSource);
   const getClientForSource = useAiStore((s) => s.getClientForSource);
 
   const {
@@ -105,6 +95,7 @@ export default function SettingsPage() {
     devtoolsEnabled,
     setDevtoolsState,
   } = useSettingsStore((s) => s);
+
   const { theme: activeTheme, setTheme } = useTheme();
 
   const activeSource = useMemo(
@@ -125,10 +116,6 @@ export default function SettingsPage() {
   );
   const [availableModels, setAvailableModels] = useState<AiModelSummary[]>([]);
   const [modelPopoverOpen, setModelPopoverOpen] = useState(false);
-  const [addDialogOpen, setAddDialogOpen] = useState(false);
-
-  const [shareDialogUrl, setShareDialogUrl] = useState("");
-  const [shareDialogOpen, setShareDialogOpen] = useState(false);
 
   useEffect(() => {
     setLocalName(activeSource?.name ?? "");
@@ -367,182 +354,14 @@ export default function SettingsPage() {
       : t("model.sel.unknown", { name: activeSource.model });
   }, [activeSource, availableModels, t]);
 
-  const canRemoveSource = sources.length > 1;
-
-  const handleRemoveSource = (id: string) => {
-    if (sources.length <= 1) {
-      toast.error(t("sources.remove.error"));
-      return;
-    }
-    const target = sources.find((source) => source.id === id);
-    removeSource(id);
-    if (target) {
-      toast.success(
-        t("sources.remove.success", {
-          name: target.name,
-        }),
-      );
-    }
-  };
-
-  const handleShareSource = (source: AiSource) => {
-    const json: ImportAISourceModel = {
-      name: source.name,
-      provider: source.provider,
-      baseUrl: source.baseUrl,
-      key: source.apiKey ?? undefined,
-      model: source.model,
-    };
-
-    // convert to url
-    const url = `${window.location.origin}/settings/import#b64:${btoa(JSON.stringify(json))}`;
-
-    setShareDialogUrl(url);
-    setShareDialogOpen(true);
-  };
-
-  const qwenTooltipContent = (
-    <span>
-      {tCommon("qwen-callout.tooltip.prefix")}{" "}
-      <a
-        href={QWEN_TOKEN_URL}
-        target="_blank"
-        rel="noreferrer"
-        className="underline underline-offset-2"
-      >
-        {tCommon("qwen-callout.tooltip.link")}
-      </a>
-      {tCommon("qwen-callout.tooltip.suffix")}
-    </span>
-  );
-
   return (
     <>
-      <ShareAISourceDialog
-        open={shareDialogOpen}
-        onOpenChangeAction={setShareDialogOpen}
-        url={shareDialogUrl}
-      />
       <div className="mx-auto max-w-3xl space-y-8 p-4 md:p-8">
         <h1 className="text-2xl font-bold tracking-tight">{t("heading")}</h1>
 
         <BackButton />
 
-        <Card>
-          <CardHeader>
-            <CardTitle>{t("sources.title")}</CardTitle>
-            <CardDescription>{t("sources.desc")}</CardDescription>
-          </CardHeader>
-          <CardContent className="space-y-4">
-            <div className="flex flex-wrap items-center justify-between gap-3">
-              <div className="text-sm text-muted-foreground">
-                {t("sources.active.label")}
-              </div>
-              <Button
-                variant="secondary"
-                size="sm"
-                onClick={() => setAddDialogOpen(true)}
-              >
-                <Plus className="mr-1.5 h-4 w-4" />
-                {t("sources.add.label")}
-              </Button>
-            </div>
-
-            <div className="space-y-2">
-              {sources.map((source) => {
-                const isActive = source.id === activeSourceId;
-                return (
-                  <div
-                    key={source.id}
-                    className={cn(
-                      "flex flex-col gap-3 rounded-md border border-border p-3 md:flex-row md:items-center md:justify-between",
-                      isActive && "border-primary",
-                    )}
-                    onClick={() => setActiveSource(source.id)}
-                  >
-                    <div className="flex flex-col gap-2 md:flex-row md:items-center md:gap-3 select-none">
-                      <div>
-                        <p className="text-sm font-medium">
-                          {source.name}
-                          <span className="ml-2 text-xs uppercase text-muted-foreground">
-                            {t(`sources.providers.${source.provider}`)}
-                          </span>
-                        </p>
-                        <p className="text-xs text-muted-foreground">
-                          {source.baseUrl ??
-                            DEFAULT_BASE_BY_PROVIDER[source.provider]}
-                        </p>
-                      </div>
-                    </div>
-
-                    <div className="flex items-center gap-3">
-                      <label className="flex cursor-pointer items-center gap-2 text-sm text-muted-foreground">
-                        <Checkbox
-                          onClick={(e) => e.stopPropagation()}
-                          checked={source.enabled}
-                          onCheckedChange={(state) =>
-                            toggleSource(source.id, Boolean(state))
-                          }
-                        />
-                        {t("sources.enabled.toggle")}
-                      </label>
-
-                      {/* Share button */}
-                      <Button
-                        variant="ghost"
-                        size="icon"
-                        onClick={(event) => {
-                          event.stopPropagation();
-                          handleShareSource(source);
-                        }}
-                        aria-label={t("sources.share.label")}
-                      >
-                        <Share2Icon className="h-4 w-4" />
-                      </Button>
-
-                      {/* Delete button */}
-                      <Button
-                        variant="ghost"
-                        size="icon"
-                        onClick={(event) => {
-                          event.stopPropagation();
-                          handleRemoveSource(source.id);
-                        }}
-                        disabled={!canRemoveSource}
-                        aria-label={t("sources.remove.label")}
-                      >
-                        <Trash2 className="h-4 w-4" />
-                      </Button>
-                    </div>
-                  </div>
-                );
-              })}
-              {showQwenHint && (
-                <div className="flex flex-col gap-3 rounded-md border border-dashed border-primary/40 bg-primary/5 p-4 md:flex-row md:items-center md:justify-between">
-                  <div className="space-y-1">
-                    <div className="flex items-center gap-2">
-                      <p className="text-sm font-semibold">
-                        {tCommon("qwen-callout.title")}
-                      </p>
-                      <InfoTooltip
-                        content={qwenTooltipContent}
-                        ariaLabel={tCommon("qwen-callout.title")}
-                      />
-                    </div>
-                    <Badge variant="secondary" className="w-fit">
-                      {tCommon("qwen-callout.badge")}
-                    </Badge>
-                  </div>
-                  <Button asChild className="w-full md:w-auto">
-                    <a href={QWEN_TOKEN_URL} target="_blank" rel="noreferrer">
-                      {tCommon("qwen-callout.button")}
-                    </a>
-                  </Button>
-                </div>
-              )}
-            </div>
-          </CardContent>
-        </Card>
+        <AISourceManager />
 
         <Card>
           <CardHeader>
@@ -885,8 +704,6 @@ export default function SettingsPage() {
         </Card>
 
         <BackButton />
-
-        <AddAISourceDialog open={addDialogOpen} onChange={setAddDialogOpen} />
       </div>
     </>
   );
